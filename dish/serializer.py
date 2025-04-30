@@ -8,6 +8,7 @@ requests and responses.
 
 from rest_framework import serializers
 from .models import Dish
+from foodCategory.serializers import CategorySerializer
 
 
 class DishSerializer(serializers.ModelSerializer):
@@ -17,6 +18,7 @@ class DishSerializer(serializers.ModelSerializer):
     Handles conversion between Dish instances and their JSON
     representations for use in API views.
     """
+    category = CategorySerializer(read_only=True)
     class Meta:
         model = Dish
         fields = [
@@ -24,3 +26,12 @@ class DishSerializer(serializers.ModelSerializer):
             'created_at', 'updated_at', 'price', 'description'
         ]
         read_only_fields = ['created_at', 'updated_at', 'slug']
+
+
+class DishDetailSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Dish
+        fields = [
+            'id', 'name', 'slug', 'description', 'price', 'image',
+            'category', 'is_available', ''
+        ]

@@ -13,4 +13,5 @@ urlpatterns = [
         views.random_featured_dish,
         name='random_featured_dish'
     ),
+    path('dish/', views.dish_list, name='dish_list')
 ]

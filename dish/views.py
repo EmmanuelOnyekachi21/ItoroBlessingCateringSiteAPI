@@ -35,7 +35,7 @@ def cache_available_dish_data():
         
         if len(data) > 3:
             featured = random.sample(data, 3)
-            cache.set('available_dish_data', featured, timeout=30)
+            cache.set('available_dish_data', featured, timeout=300)
             return featured
         else:
             featured = None
@@ -70,3 +70,9 @@ def random_featured_dish(request):
         queryset = Dish.objects.filter(is_available=True)[:3]
         serializer = DishSerializer(queryset, many=True)
         return Response(serializer.data)
+
+@api_view(['GET'])
+def dish_list(request):
+    available_dishes = Dish.objects.filter(is_available=True)
+    serializer = DishSerializer(available_dishes, many=True)
+    return Response(serializer.data)
