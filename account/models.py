@@ -133,4 +133,4 @@ class Account(AbstractBaseUser, PermissionsMixin):
         """
         Returns the string representation of the user.
         """
-        return self.email
+        return f'{self.first_name} {self.last_name}'

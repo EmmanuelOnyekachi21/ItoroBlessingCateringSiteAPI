@@ -12,6 +12,31 @@ from django.utils.text import slugify
 from foodCategory.models import Category
 
 
+class ExtraCategory(models.Model):
+    name = models.CharField(max_length=50)
+
+    def __str__(self):
+        return self.name
+    
+    class Meta:
+        db_table = ''
+        managed = True
+        verbose_name = 'ExtraCategory'
+        verbose_name_plural = 'ExtraCategories'
+
+
+class ExtraItem(models.Model):
+    name = models.CharField(max_length=100)
+    price = models.DecimalField(max_digits=6, decimal_places=2)
+    category = models.ForeignKey(
+        ExtraCategory, on_delete=models.CASCADE, related_name="extras"
+    )
+    is_available = models.BooleanField(default=True)
+
+    def __str__(self):
+        return self.name
+
+
 class Dish(models.Model):
     """
     Represents a dish available for order on the food platform.
@@ -29,6 +54,9 @@ class Dish(models.Model):
     is_available = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    allowed_extras = models.ManyToManyField(
+        ExtraCategory, blank=True, related_name='dishes'
+    )
 
     def save(self, *args, **kwargs):
         """
@@ -43,3 +71,4 @@ class Dish(models.Model):
 
     def __str__(self):
         return self.name
+

@@ -10,9 +10,10 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
 from .models import Dish
-from .serializer import DishSerializer
+from .serializer import DishSerializer, DishDetailSerializer
 from django.core.cache import cache
 import random, logging
+from django.shortcuts import get_object_or_404
 
 # Creates a logger named after the current Python module. 
 # If your file is called views.py, the logger name becomes yourapp.views
@@ -76,3 +77,16 @@ def dish_list(request):
     available_dishes = Dish.objects.filter(is_available=True)
     serializer = DishSerializer(available_dishes, many=True)
     return Response(serializer.data)
+
+@api_view(['GET'])
+def dish_detail_view(request, category_slug, slug):
+    dish = get_object_or_404(
+        Dish,
+        slug=slug,
+        category__slug=category_slug,
+        is_available=True
+    )
+    serializer = DishDetailSerializer(dish)
+    return Response(
+        serializer.data, status=status.HTTP_200_OK
+    )
