@@ -9,6 +9,7 @@ requests and responses.
 from rest_framework import serializers
 from .models import Dish, ExtraItem, ExtraCategory
 from foodCategory.serializers import CategorySerializer
+from dish.models import Dish
 from django.db.models import Avg
 from review.serializers import ReviewSerializer
 
@@ -50,13 +51,15 @@ class DishDetailSerializer(serializers.ModelSerializer):
     average_rating = serializers.SerializerMethodField()
     total_reviews = serializers.SerializerMethodField()
     reviews = ReviewSerializer(many=True, read_only=True)
+    suggested_pairings = DishSerializer(read_only=True, many=True)
     class Meta:
         model = Dish
         fields = [
             'id', 'name', 'slug', 'description', 'price', 'image',
             'category', 'is_available', 'allowed_extras',
-            'average_rating', 'total_reviews', 'reviews'
+            'average_rating', 'total_reviews', 'reviews', 'suggested_pairings'
         ]
+
     def get_average_rating(self, obj):
         reviews = obj.reviews.all()
         if reviews.exists():
@@ -66,3 +69,5 @@ class DishDetailSerializer(serializers.ModelSerializer):
     def get_total_reviews(self, obj):
         total = obj.reviews.count()
         return total
+
+        

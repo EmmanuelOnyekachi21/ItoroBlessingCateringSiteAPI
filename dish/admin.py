@@ -36,14 +36,14 @@ class DishAdmin(admin.ModelAdmin):
     ordering = ('-updated_at',)
 
     readonly_fields = ('created_at', 'updated_at')
-    filter_horizontal = ('allowed_extras',)
+    filter_horizontal = ('allowed_extras', 'suggested_pairings')
 
     fieldsets = (
         ("Dish Information", {
             "fields": (
                 'name', 'slug', 'description',
                 'price', 'image', 'category', 'is_available',
-                'allowed_extras'
+                'allowed_extras', 'suggested_pairings'
             )
         }),
         ("Timestamps", {
@@ -57,7 +57,8 @@ class DishAdmin(admin.ModelAdmin):
             "classes": ("wide",),
             "fields": (
                 'name', 'slug', 'description',
-                'price', 'image', 'category', 'is_available', 'allowed_extras'
+                'price', 'image', 'category', 'is_available',
+                'allowed_extras', 'suggested_pairings'
             ),
         }),
     )
