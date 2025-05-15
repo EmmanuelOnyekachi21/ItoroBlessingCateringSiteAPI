@@ -23,6 +23,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include('foodCategory.urls')),
     path('api/dish/', include('dish.urls')),
+    path('api/auth/', include('userauth.urls')),
 ]
 
 if settings.DEBUG:

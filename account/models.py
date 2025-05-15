@@ -16,6 +16,8 @@ This module also includes the `AccountManager` class, \
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
 from django.contrib.auth.models import PermissionsMixin
+import uuid
+from django.shortcuts import get_object_or_404
 
 
 class Roles(models.TextChoices):
@@ -38,6 +40,8 @@ class AccountManager(BaseUserManager):
     Handles user creation using email as the unique identifier,
     and provides methods to create both regular users and superusers.
     """
+    def get_object_by_public_id(self, public_id):
+        return get_object_or_404(self.model, public_id=public_id)
 
     def create_user(self, email, password=None, **extra_fields):
         """
@@ -98,7 +102,9 @@ class Account(AbstractBaseUser, PermissionsMixin):
     Includes additional fields such as name, contact information, address,
     date of birth, and user roles. Also supports custom permission fields.
     """
-
+    public_id = models.UUIDField(
+        db_index=True, default=uuid.uuid4, editable=False
+    )
     email = models.EmailField(
         verbose_name="email address",
         max_length=255,

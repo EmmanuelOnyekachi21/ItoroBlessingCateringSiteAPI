@@ -46,7 +46,7 @@ class AccountAdmin(UserAdmin):
     # in the admin interface.
     list_display = (
         'first_name', 'last_name', 'email', 'phone_number',
-        'is_staff', 'is_active'
+        'is_staff', 'is_active', 'password'
     )
 
     # Defines the filters shown in the admin sidebar to filter users by
