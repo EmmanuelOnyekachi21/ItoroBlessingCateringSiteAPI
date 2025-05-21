@@ -53,6 +53,7 @@ INSTALLED_APPS = [
     'foodCategory',
     'dish',
     'review',
+    'bookings',
 ]
 
 MIDDLEWARE = [
@@ -170,6 +171,12 @@ LOGGING = {
           'filename': os.path.join(LOG_DIR, 'userauth.log'),
           'formatter': 'verbose',
           'level': 'DEBUG',
+        },
+        'bookings_file': {
+            'class': 'logging.FileHandler',
+            'filename': os.path.join(LOG_DIR, 'bookings.log'),
+            'formatter': 'verbose',
+            'level': 'DEBUG',
         },
     },
     'loggers': {
