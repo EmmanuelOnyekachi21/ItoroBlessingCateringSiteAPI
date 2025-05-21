@@ -16,6 +16,6 @@ class AccountSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'email', 'first_name', 'last_name', 'phone_number',
             'address', 'city', 'state', 'date_of_birth', 'is_active',
-            'is_superuser', 'is_staff', 'date_joined', 'last_login'
+            'is_superuser', 'is_staff', 'date_joined', 'last_login',
         ]
         read_only_field = ['is_active', 'is_superuser', 'is_staff']

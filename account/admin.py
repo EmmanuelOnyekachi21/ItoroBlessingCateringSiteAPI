@@ -46,7 +46,7 @@ class AccountAdmin(UserAdmin):
     # in the admin interface.
     list_display = (
         'first_name', 'last_name', 'email', 'phone_number',
-        'is_staff', 'is_active', 'password'
+        'is_staff', 'is_active', 'is_verified', 'password',
     )
 
     # Defines the filters shown in the admin sidebar to filter users by
@@ -67,7 +67,7 @@ class AccountAdmin(UserAdmin):
         ("Personal Information", {
             "fields": (
                 "first_name", "last_name", "email", "phone_number",
-                "date_of_birth"
+                "date_of_birth", "is_verified"
             )
         }),
         ("Permissions", {

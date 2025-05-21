@@ -19,7 +19,7 @@ class RegisterSerializer(AccountSerializer):
         model = Account
         fields = [
             'id', 'email', 'first_name', 'last_name', 'phone_number',
-            'address', 'city', 'state', 'date_of_birth', "password",
+            'address', 'city', 'state', 'date_of_birth', 'is_verified', "password",
             'confirm_password'
         ]
     

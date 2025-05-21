@@ -13,7 +13,6 @@ def logout_view(request):
         refresh_token = request.data['refresh']
         token = RefreshToken(refresh_token)
         token.blacklist()
-        return Response(status=status.HTTP_205_RESET_CONTENT)
     except KeyError:
         return Response(
             {
@@ -28,3 +27,4 @@ def logout_view(request):
             },
             status=status.HTTP_400_BAD_REQUEST
         )
+    return Response({"Message": "Successful logging out"}, status=status.HTTP_205_RESET_CONTENT)

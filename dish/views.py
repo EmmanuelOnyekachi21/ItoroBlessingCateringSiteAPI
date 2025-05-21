@@ -64,6 +64,8 @@ def random_featured_dish(request):
             )
         
         # featured_dishes = random.sample(dishes, 3)
+        logger.info("Cache hit: Retrieved featured dishes from cache.")
+        # Log the cache hit
         return Response(dishes)
 
     except Exception:

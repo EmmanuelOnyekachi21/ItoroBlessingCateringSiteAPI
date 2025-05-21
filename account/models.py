@@ -129,6 +129,10 @@ class Account(AbstractBaseUser, PermissionsMixin):
     is_superuser = models.BooleanField(default=False)
     date_joined = models.DateTimeField(auto_now_add=True)
     last_login = models.DateTimeField(null=True, blank=True)
+    
+    # When user verifies account after inputting OTP sent to mail, it becomes
+    # true
+    is_verified = models.BooleanField(default=False)
 
     objects = AccountManager()
 

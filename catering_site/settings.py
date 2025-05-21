@@ -12,10 +12,15 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 
 from pathlib import Path
 from datetime import timedelta
+import os
+import logging
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+LOG_DIR = os.path.join(BASE_DIR, 'logs')
+os.makedirs(LOG_DIR, exist_ok=True) # Create the logs directory if it doesn't exist
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
@@ -95,11 +100,6 @@ DATABASES = {
     }
 }
 
-# Authenticate user through Email
-# AUTHENTICATION_BACKENDS = [
-#     'userauth.backend.EmailBackend',  # 👈 your custom backend
-# ]
-
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
 
@@ -146,14 +146,43 @@ AUTH_USER_MODEL = 'account.Account'
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
+    # Formatters define the layout of the log messages.
+    # They specify how the log messages should be formatted.
+    'formatters': {
+      'verbose':{
+        'format': '[{asctime}] {levelname} {name}: {message}',
+        'style': '{',
+        },
+      },
+    # Handlers sends the log messages to their final destination.
     'handlers': {
         'console': {  # Log to terminal
             'class': 'logging.StreamHandler',
         },
+        'random_dish_file': {
+          'class': 'logging.FileHandler',
+          'filename': os.path.join(LOG_DIR, 'dish.log'),
+          'formatter': 'verbose',
+          'level': 'DEBUG',
+        },
+        'userauth_file': {
+          'class': 'logging.FileHandler',
+          'filename': os.path.join(LOG_DIR, 'userauth.log'),
+          'formatter': 'verbose',
+          'level': 'DEBUG',
+        },
     },
-    'root': {
-        'handlers': ['console'],
-        'level': 'DEBUG',
+    'loggers': {
+      'dish.views': {
+          'handlers': ['random_dish_file', 'console'],
+          'level': 'DEBUG',
+          'propagate': False,
+      },
+      'userauth.views': {
+            'handlers': ['userauth_file', 'console'],
+            'level': 'DEBUG',
+            'propagate': False,
+        },
     },
 }
 
@@ -178,3 +207,14 @@ REST_FRAMEWORK = {
 'DEFAULT_FILTER_BACKENDS':
 ['django_filters.rest_framework.DjangoFilterBackend'],
 }
+
+# Setup Email settings
+# EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'emmanuelonyekachi04122000@gmail.com'
+EMAIL_HOST_PASSWORD = '08023728690Ea#'
+
+
