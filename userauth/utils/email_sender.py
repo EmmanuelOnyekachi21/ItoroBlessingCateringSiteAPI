@@ -37,7 +37,7 @@ def send_verification_email(user_email, token):
     """
     subject = 'Verify your email'
     verification_link = (
-        f'http://localhost:8000/api/auth/verify/?token={token}'
+        f'http://localhost:5173/verify/?token={token}'
     )
     message = (
         f"Click the link to verify your email: {verification_link}"
