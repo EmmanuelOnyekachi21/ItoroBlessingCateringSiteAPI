@@ -23,6 +23,7 @@ import logging
 
 logger = logging.getLogger('__name__')
 
+
 @api_view(['GET'])
 def verify_email_view(request):
     token = request.query_params.get('token')
