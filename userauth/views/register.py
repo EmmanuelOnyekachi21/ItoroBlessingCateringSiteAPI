@@ -29,6 +29,7 @@ def register_view(request):
     The send_verification_email function sends an email to the user\
         with a verification link that includes the generated token.
     """
+    logger.info(f'Generated token for {account}: {token}')
     refresh = RefreshToken.for_user(account)
     return Response({
         "message": (

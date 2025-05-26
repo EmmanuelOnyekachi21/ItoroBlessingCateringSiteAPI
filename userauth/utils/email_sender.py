@@ -7,6 +7,11 @@ from django.core.mail import send_mail
 from django.conf import settings
 
 
+import logging
+
+
+logger = logging.getLogger('__name__')
+
 def send_email(subject, message, recipient_email):
     """
     Sends an email with the specified subject and message to the recipient.
@@ -42,6 +47,7 @@ def send_verification_email(user_email, token):
     message = (
         f"Click the link to verify your email: {verification_link}"
     )
+    logger.info(f'Token for {user_email}: {token}')
     send_email(subject, message, [user_email])
     
 def send_password_reset_email(user_email, token):

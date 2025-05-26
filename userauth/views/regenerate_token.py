@@ -1,3 +1,11 @@
+"""
+This module provides an API endpoint for regenerating a verification token
+for user accounts. It defines a view that accepts an email address,
+validates the existence and verification status of the associated account,
+generates a new verification token if necessary, and sends the token to
+the user's email address. The module also logs token regeneration events
+for auditing purposes.
+"""
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
@@ -6,10 +14,10 @@ from userauth.utils.email_sender import send_verification_email
 from account.models import Account
 import logging
 
-
 logger = logging.getLogger(__name__)
 
-@api_view(['post'])
+
+@api_view(['POST'])
 def regenerate_token(request):
     """
     Handles the regeneration of a verification token for a user. This function
@@ -43,42 +51,39 @@ def regenerate_token(request):
     """
     email = request.data.get('email')
     if not email:
-        return Response({
-            "message": "Please input email"
-        }, status=status.HTTP_400_BAD_REQUEST)
-    
+        return Response(
+            {"message": "Please input email"},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
     # Validate email address to ensure that user already registered,
     # and is stored in the database
     try:
         account = Account.objects.get(email=email)
     except Account.DoesNotExist:
-        return Response({
-            "message": "Email not found. Please register first"
-        }, status=status.HTTP_404_NOT_FOUND)
+        return Response(
+            {"message": "Email not found. Please register first"},
+            status=status.HTTP_404_NOT_FOUND
+        )
+
     # Check if the account is already verified
     if account.is_verified:
-        return Response({
-            "message": "Account already verified"
-        }, status=status.HTTP_400_BAD_REQUEST)
-    # Generate a new verification token
-    # and send the email
-    # to the user with the new token
-    # The token is generated using the generate_email_token function,
-    # which creates a unique token based on the user's email address.
-    # This token is then sent to the user's email address using the send_verification_email function.
-    # This function typically sends an email with a verification link\
-    # that includes the generated token.
+        return Response(
+            {"message": "Account already verified"},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    # Generate a new verification token and send the email
     token = generate_email_token(email)
-    logger.info(f"Regenerated token for {email}: {token}")
+    logger.info("Regenerated token for %s: %s", email, token)
     send_verification_email(email, token)
 
-    return Response({
-        "message": (
-            "A new verification link has been sent to your email."
-            " Please check your inbox or spam folder."
-        )
-    }, status=status.HTTP_200_OK)
-
-
-
-
+    return Response(
+        {
+            "message": (
+                "A new verification link has been sent to your email."
+                " Please check your inbox or spam folder."
+            )
+        },
+        status=status.HTTP_200_OK
+    )
