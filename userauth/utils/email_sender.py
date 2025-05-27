@@ -53,6 +53,21 @@ def send_verification_email(user_email, token):
 
 
 def send_password_reset_email(user_email, token):
+    """
+    Sends a password reset link to the user_email with a unique reset token.
+
+    Args:
+        user_email (str): The email address of the user requesting a password
+            reset.
+        token (str): The unique token to be included in the password reset
+            link.
+
+    Returns:
+        None
+
+    Side Effects:
+        Sends an email to the user with a link to reset their password.
+    """
     subject = 'Reset your password'
     reset_link = (
         f'http://localhost:8000/api/auth/reset-password/?token={token}'
