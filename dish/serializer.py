@@ -1,4 +1,6 @@
 """
+dish.serializer
+-----------
 Serializers for the Dish model.
 
 This module defines the serializer for the Dish model to handle

@@ -1,11 +1,15 @@
 """
-This module provides a view for verifying user email addresses via a token.
-It defines an API endpoint that accepts a token as a query parameter,
-validates it, and updates the user's verification status accordingly.
+This module provides functionality to verify user email addresses via a token.
 
-API view to verify a user's email address using a token.
-Retrieves the 'token' from the request's query parameters, validates it,
-and if valid, marks the corresponding user's email as verified.
+Functions:
+    - verify_email_view(request):
+        API endpoint that accept a 'token' as a query parameter, validates it,
+        and updates the user's verification status accordingly.
+
+API Behavior:
+    - Retrieves the 'token' from the request's query parameters.
+    - Validates the token using verify_email_token.
+    - If valid, marks the corresponding user's email as verified.
 
 Returns:
     - 400 BAD REQUEST if the token is missing, invalid, expired, or if the
@@ -26,6 +30,29 @@ logger = logging.getLogger('__name__')
 
 @api_view(['GET'])
 def verify_email_view(request):
+    """
+    Handles email verification requests.
+
+    This view verifies a user's email address using a token provided as a
+    query parameter. It performs the following steps:
+
+        1. Retrieves the 'token' from the request's query parameters.
+        2. Validates the token and extracts the associated email address.
+        3. Checks if a user with the extracted email exists.
+        4. If the user exists and is not already verified, marks the user as
+           verified.
+        5. Returns appropriate HTTP responses for missing or invalid tokens,
+           already verified users, or non-existent users.
+
+    Args:
+        request (Request): The HTTP request object containing query
+            parameters.
+
+    Returns:
+        Response: A DRF Response object with a message indicating the result
+            of the verification process and the appropriate HTTP status code.
+    """
+
     token = request.query_params.get('token')
     if not token:
         return Response({
