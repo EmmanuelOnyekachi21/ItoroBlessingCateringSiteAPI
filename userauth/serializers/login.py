@@ -39,8 +39,6 @@ class LoginSerializer(TokenObtainPairSerializer):
     Raises:
         serializers.ValidationError: If no active account is found with
         the provided credentials or if the user's email is not verified.
-    """
-    """
     
     """
     def validate(self, attrs):

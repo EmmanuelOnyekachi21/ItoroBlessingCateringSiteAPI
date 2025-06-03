@@ -74,9 +74,24 @@ def add_dish(request):
             },
             status=status.HTTP_201_CREATED
         )
+    except Dish.DoesNotExist:
+        return Response(
+            {'error': 'Dish not found'},
+            status=status.HTTP_404_NOT_FOUND
+        )
+    except ExtraItem.DoesNotExist:
+        return Response(
+            {'error': 'Extra item not found'},
+            status=status.HTTP_404_NOT_FOUND
+        )
+    except Cart.DoesNotExist:
+        return Response(
+            {'error': 'Cart not found'},
+            status=status.HTTP_404_NOT_FOUND
+        )
     except Exception as e:
         return Response(
-            {'error': str(e)},
+            {'error': f'An unexpected error occurred: {str(e)}'},
             status=status.HTTP_400_BAD_REQUEST
         )
 
