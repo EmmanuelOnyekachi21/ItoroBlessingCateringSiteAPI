@@ -61,3 +61,13 @@ class CartItemSerializer(serializers.ModelSerializer):
             'quantity',
             'extras'
         )
+
+
+class SimpleCartSerializer(serializers.ModelSerializer):
+    number_of_items = serializers.SerializerMethodField(read_only=True)
+    class Meta:
+        model = Cart
+        fields = ['id', 'cart_code', 'number_of_items']
+    
+    def get_number_of_items(self, obj):
+        return sum([item.quantity for item in obj.items.all()])

@@ -26,5 +26,25 @@ class CartAdmin(admin.ModelAdmin):
 
 @admin.register(CartItem)
 class CartItemAdmin(admin.ModelAdmin):
-    list_display = ('cart', 'dish', 'quantity', 'extras')
+    list_display = ('cart', 'dish', 'quantity')
     search_fields = ('cart__cart_code', 'dish__name')
+    filter_horizontal = ('extras',)
+
+    fieldsets = (
+        ("CartItem Information", {
+            "fields": (
+                'cart', 'dish', 'quantity'
+            )
+        }),
+        ("Extras", {
+            "classes": ('collapse',),
+            "fields": ('extras',)
+        }),
+    )
+    
+    add_fieldsets = (
+        ("Add CartItem", {
+            "classes": ("wide",),
+            'fields': ('cart', 'dish', 'quantity', 'extras'),
+        }),
+    )

@@ -48,10 +48,10 @@ class CartItem(models.Model):
     """
     Represents an item in a cart, including dish, quantity, and extras.
     """
-    cart = models.ForeignKey(Cart, on_delete=models.CASCADE)
+    cart = models.ForeignKey(Cart, on_delete=models.CASCADE, related_name='items')
     dish = models.ForeignKey(Dish, null=True, on_delete=models.SET_NULL)
     quantity = models.IntegerField(default=1)
-    extras = models.ForeignKey(ExtraItem, on_delete=models.SET_NULL, null=True)
+    extras = models.ManyToManyField(ExtraItem, blank=True)
 
     def __str__(self):
         """
