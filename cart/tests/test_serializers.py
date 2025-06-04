@@ -173,3 +173,25 @@ def test_cart_item_serializer(cart_item, cart, dish):
     assert data['cart']['cart_code'] == str(cart.cart_code)
     assert data['dish']['name'] == dish.name
     assert data['quantity'] == 2
+
+
+@pytest.mark.django_db
+def test_simpleCartSerializer(cart, cart_item):
+    """
+    Test the SimpleCartSerializer to ensure it correctly serializes\
+        a cart instance.
+    This test verifies that:
+    - The 'cart_code' field in the serialized data matches the string\
+        representation of the cart's cart_code.
+    - The 'number_of_items' field in the serialized data equals 2.
+    Args:
+        cart: A cart instance to be serialized.
+        cart_item: A cart item instance associated with the cart.
+    Assertions:
+        - data['cart_code'] == str(cart.cart_code)
+        - data['number_of_items'] == 2
+    """
+    serializer = SimpleCartSerializer(instance=cart)
+    data = serializer.data
+    assert data['cart_code'] == str(cart.cart_code)
+    assert data['number_of_items'] == 2
