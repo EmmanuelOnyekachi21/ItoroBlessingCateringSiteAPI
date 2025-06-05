@@ -64,6 +64,18 @@ class CartItemSerializer(serializers.ModelSerializer):
 
 
 class SimpleCartSerializer(serializers.ModelSerializer):
+    """
+    Serializer for the Cart model that provides a simplified representation
+    including the cart's ID, cart code, and the total number of items.
+    Fields:
+        id (int): Unique identifier for the cart.
+        cart_code (str): Unique code associated with the cart.
+        number_of_items (int): Total quantity of all items in the cart,
+            calculated by summing the quantity of each item.
+    Methods:
+        get_number_of_items(obj): Returns the sum of quantities for all
+            items in the cart instance.
+    """
     number_of_items = serializers.SerializerMethodField(read_only=True)
     class Meta:
         model = Cart
