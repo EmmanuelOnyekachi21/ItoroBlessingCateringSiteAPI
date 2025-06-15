@@ -51,8 +51,14 @@ class CartItem(models.Model):
     cart = models.ForeignKey(Cart, on_delete=models.CASCADE, related_name='items')
     dish = models.ForeignKey(Dish, null=True, on_delete=models.SET_NULL)
     quantity = models.IntegerField(default=1)
-    extras = models.ManyToManyField(ExtraItem, blank=True)
+    extras = models.ManyToManyField(
+        ExtraItem,
+        through='CartItemExtra',
+        through_fields=('cart_item', 'extra'),
+        blank=True
+    )
 
+    
     def __str__(self):
         """
         Returns a string representation of the cart item,\
@@ -61,3 +67,41 @@ class CartItem(models.Model):
         return (
             f"{self.quantity} x {self.dish.name} (Cart: {self.cart.cart_code})"
         )
+
+class CartItemExtra(models.Model):
+    """
+    Represents an extra item added to a cart item within the shopping cart.
+    Attributes:
+        cart_item (ForeignKey): Reference to the CartItem this\
+            extra is associated with.
+        extra (ForeignKey): Reference to the ExtraItem being added.
+        quantity (IntegerField): The number of this extra item\
+            added to the cart item.
+    Methods:
+        __str__(): Returns a human-readable string representation\
+            of the CartItemExtra instance.
+    """
+    
+    cart_item = models.ForeignKey(
+        CartItem, related_name='extra_items', on_delete=models.CASCADE
+    )
+    extra = models.ForeignKey(
+        ExtraItem,
+        on_delete=models.CASCADE
+    )
+    quantity = models.IntegerField(default=1)
+    
+    def __str__(self):
+        """
+        Returns a short string with quantity, extra name, and cart code.
+        """
+        if not self.extra:
+            return (
+                f"{self.quantity} x Extra (No Name) "
+                f"(Cart: {self.cart_item.cart.cart_code})"
+            )
+        return (
+            f"{self.quantity} x {self.extra.name} "
+            f"(Cart Item: {self.cart_item.cart.cart_code})"
+        )
+

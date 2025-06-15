@@ -83,7 +83,7 @@ class AccountManager(BaseUserManager):
         """
         extra_fields.setdefault('is_staff', True)
         extra_fields.setdefault('is_superuser', True)
-        extra_fields.setdefault('is_admin', True)
+        # extra_fields.setdefault('is_admin', True)
 
         super_user = self.create_user(
             email,

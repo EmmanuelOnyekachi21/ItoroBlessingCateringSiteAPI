@@ -44,26 +44,42 @@ def add_dish(request):
     try:
         cart_code = request.data.get('cart_code')
         dish_id = request.data.get('dish_id')
-        extra_item_id = request.data.get('extra_item_id')
+        extra_items = request.data.get('extra_items')
+        note = request.data.get('note')
+        quantity = request.data.get('quantity')
+        orderoption = request.data.get('order_option')
         get_cart, created = Cart.objects.get_or_create(
             cart_code=cart_code
         )
+        if note:
+            get_cart.special_instruction = note
+            
+        if orderoption:
+            get_cart.order_type = orderoption
+
         get_dish = Dish.objects.get(id=dish_id)
 
         # Create CartItem object
-        cart_item, created = CartItem.objects.get_or_create(
+        cart_item, _ = CartItem.objects.get_or_create(
             cart=get_cart,
             dish=get_dish
         )
+        
+        # Update CartItem Quantity
+        if cart_item:
+            cart_item.quantity = quantity
+
         # Get Extra Items
-        if extra_item_id:
-            get_extras = ExtraItem.objects.get(id=extra_item_id)
-            cart_item.extras.set(get_extras)
+        if extra_items:
+            for item_id, data in extra_items.items():
+                item = ExtraItem.objects.get(id=item_id)
+                for value in data.values():
+                    item.quantity = value
+                cart_item.extras.add(item)
         else:
             get_extras = None
-        if created:
-            cart_item.quantity = 1
-            cart_item.save()
+        
+        cart_item.save()
 
         serializer = CartItemSerializer(cart_item)
         return Response(

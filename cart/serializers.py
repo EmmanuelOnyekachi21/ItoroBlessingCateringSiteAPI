@@ -17,6 +17,28 @@ from .models import Cart, CartItem
 from dish.serializer import DishSerializer, ExtraItemsSerializer
 
 
+class CartItemSerializer(serializers.ModelSerializer):
+    """
+    Serializer for CartItem model, providing nested representations 4 related
+    Dish, Cart, and ExtraItems models. Used to serialize and deserialize cart
+    item data, including associated dish, cart, quantity, and extra items.
+    All related fields are read-only and represented using their respective
+    serializers.
+    """
+    dish = DishSerializer(read_only=True)
+    # cart = CartSerializer(read_only=True)
+    extras = ExtraItemsSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = CartItem
+        fields = (
+            'id',
+            # 'cart',
+            'dish',
+            'quantity',
+            'extras'
+        )
+
 class CartSerializer(serializers.ModelSerializer):
     """
     Serializer for the Cart model.
@@ -27,6 +49,7 @@ class CartSerializer(serializers.ModelSerializer):
     """
 
     user = serializers.StringRelatedField(read_only=True)
+    items = CartItemSerializer(many=True, read_only=True)
 
     class Meta:
         model = Cart
@@ -36,32 +59,11 @@ class CartSerializer(serializers.ModelSerializer):
             'user',
             'created_at',
             'paid',
+            'order_type',
+            'special_instruction',
+            'items'
         )
         read_only_fields = ('created_at', 'paid', 'user')
-
-
-class CartItemSerializer(serializers.ModelSerializer):
-    """
-    Serializer for CartItem model, providing nested representations 4 related
-    Dish, Cart, and ExtraItems models. Used to serialize and deserialize cart
-    item data, including associated dish, cart, quantity, and extra items.
-    All related fields are read-only and represented using their respective
-    serializers.
-    """
-    dish = DishSerializer(read_only=True)
-    cart = CartSerializer(read_only=True)
-    extras = ExtraItemsSerializer(many=True, read_only=True)
-
-    class Meta:
-        model = CartItem
-        fields = (
-            'id',
-            'cart',
-            'dish',
-            'quantity',
-            'extras'
-        )
-
 
 class SimpleCartSerializer(serializers.ModelSerializer):
     """

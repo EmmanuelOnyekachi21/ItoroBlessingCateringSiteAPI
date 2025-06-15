@@ -1,7 +1,8 @@
 from django.contrib import admin
 
 # Register your models here.
-from .models import Cart, CartItem
+from .models import Cart, CartItem, CartItemExtra
+from dish.models import ExtraItem
 
 
 @admin.register(Cart)
@@ -24,21 +25,30 @@ class CartAdmin(admin.ModelAdmin):
     get_user_email.short_description = 'User Email'
 
 
+class CartItemExtraInline(admin.TabularInline):
+    model = CartItemExtra
+    extra = 1
+    verbose_name = 'Extra Item'
+    verbose_name_plural = 'Extra Items'
+    autocomplete_fields = ('extra',)
+
+
+@admin.register(ExtraItem)
+class ExtraItemAdmin(admin.ModelAdmin):
+    search_fields = ['name']  # 👈 this is what enables autocomplete
+
+
 @admin.register(CartItem)
 class CartItemAdmin(admin.ModelAdmin):
     list_display = ('cart', 'dish', 'quantity')
     search_fields = ('cart__cart_code', 'dish__name')
-    filter_horizontal = ('extras',)
+    inlines = (CartItemExtraInline,)
 
     fieldsets = (
         ("CartItem Information", {
             "fields": (
                 'cart', 'dish', 'quantity'
             )
-        }),
-        ("Extras", {
-            "classes": ('collapse',),
-            "fields": ('extras',)
         }),
     )
     
