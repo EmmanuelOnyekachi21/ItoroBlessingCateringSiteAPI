@@ -13,8 +13,34 @@ Classes:
 """
 from rest_framework import serializers
 from rest_framework.response import Response
-from .models import Cart, CartItem
+from .models import Cart, CartItem, CartItemExtra
 from dish.serializer import DishSerializer, ExtraItemsSerializer
+
+
+class CartItemExtraSerializer(serializers.ModelSerializer):
+    """
+    Serializer for the CartItemExtra model, providing nested representation
+    of ExtraItem associated with a CartItem. Used to serialize and deserialize
+    extra items in a cart item.
+    """
+    extra_name = serializers.SerializerMethodField()
+    extra_id = serializers.IntegerField(source='extra.id', read_only=True)
+    class Meta:
+        model = CartItemExtra
+        fields = (
+            'id',
+            'extra_id',
+            'extra_name',
+            'quantity',
+        )
+    
+    def get_extra_name(self, obj):
+        """
+        Returns the name of the extra item associated with the CartItemExtra.
+        This method is used to provide a human-readable representation
+        of the extra item in the serialized output.
+        """
+        return obj.extra.name if obj.extra else None
 
 
 class CartItemSerializer(serializers.ModelSerializer):
@@ -25,19 +51,40 @@ class CartItemSerializer(serializers.ModelSerializer):
     All related fields are read-only and represented using their respective
     serializers.
     """
-    dish = DishSerializer(read_only=True)
-    # cart = CartSerializer(read_only=True)
-    extras = ExtraItemsSerializer(many=True, read_only=True)
+    dish_name = serializers.SerializerMethodField()
+    dish_id = serializers.IntegerField(source='dish.id', read_only=True)
+    # cart_id = serializers.IntegerField(source='cart.id', read_only=True)
+    cart_code = serializers.SerializerMethodField()
+    extra_items = CartItemExtraSerializer(many=True, read_only=True)
 
     class Meta:
         model = CartItem
         fields = (
             'id',
             # 'cart',
-            'dish',
+            'cart_code',
+            'special_instruction',
+            'dish_id',
+            'dish_name',
             'quantity',
-            'extras'
+            'extra_items'
         )
+    
+    def get_dish_name(self, obj):
+        """
+        Returns the name of the dish associated with the CartItem.
+        This method is used to provide a human-readable representation
+        of the dish in the serialized output.
+        """
+        return obj.dish.name if obj.dish else None
+    
+    def get_cart_code(self, obj):
+        """
+        Returns the cart code associated with the CartItem.
+        This method is used to provide a human-readable representation
+        of the cart code in the serialized output.
+        """
+        return obj.cart.cart_code if obj.cart else None
 
 class CartSerializer(serializers.ModelSerializer):
     """

@@ -31,8 +31,6 @@ class Cart(models.Model):
     order_type = models.CharField(
         choices=ORDER_TYPES, default='delivery', max_length=10
     )
-    special_instruction = models.TextField(null=True)
-
     def __str__(self):
         """
         Returns a string representation of the cart,\
@@ -51,6 +49,7 @@ class CartItem(models.Model):
     cart = models.ForeignKey(Cart, on_delete=models.CASCADE, related_name='items')
     dish = models.ForeignKey(Dish, null=True, on_delete=models.SET_NULL)
     quantity = models.IntegerField(default=1)
+    special_instruction = models.TextField(null=True)
     extras = models.ManyToManyField(
         ExtraItem,
         through='CartItemExtra',

@@ -47,7 +47,7 @@ class CartItemAdmin(admin.ModelAdmin):
     fieldsets = (
         ("CartItem Information", {
             "fields": (
-                'cart', 'dish', 'quantity'
+                'cart', 'dish', 'quantity', 'special_instruction'
             )
         }),
     )
@@ -55,6 +55,6 @@ class CartItemAdmin(admin.ModelAdmin):
     add_fieldsets = (
         ("Add CartItem", {
             "classes": ("wide",),
-            'fields': ('cart', 'dish', 'quantity', 'extras'),
+            'fields': ('cart', 'dish', 'quantity', 'extras', 'special_instruction'),
         }),
     )

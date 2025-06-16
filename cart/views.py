@@ -19,9 +19,12 @@ from dish.models import Dish, ExtraItem
 from .serializers import *
 from rest_framework.response import Response
 from rest_framework import status
+from django.db import transaction
 
 
 @api_view(['POST'])
+# Prevents partial saves (e.g. CartItem saved but an ExtraItem fails)
+@transaction.atomic
 def add_dish(request):
     """
     Adds a dish (and optionally an extra item) to a user's cart.
@@ -46,13 +49,11 @@ def add_dish(request):
         dish_id = request.data.get('dish_id')
         extra_items = request.data.get('extra_items')
         note = request.data.get('note')
-        quantity = request.data.get('quantity')
+        quantity = int(request.data.get('quantity', 1))
         orderoption = request.data.get('order_option')
         get_cart, created = Cart.objects.get_or_create(
             cart_code=cart_code
         )
-        if note:
-            get_cart.special_instruction = note
             
         if orderoption:
             get_cart.order_type = orderoption
@@ -68,27 +69,33 @@ def add_dish(request):
         # Update CartItem Quantity
         if cart_item:
             cart_item.quantity = quantity
-
-        # Get Extra Items
-        if extra_items:
-            for item_id, data in extra_items.items():
-                item = ExtraItem.objects.get(id=item_id)
-                for value in data.values():
-                    item.quantity = value
-                cart_item.extras.add(item)
-        else:
-            get_extras = None
+        if note:
+            cart_item.special_instruction = note
         
         cart_item.save()
 
-        serializer = CartItemSerializer(cart_item)
-        return Response(
-            {
-                'message': 'Added to cart successfully',
-                'data': serializer.data,
-            },
-            status=status.HTTP_201_CREATED
-        )
+        # Add new Extras
+        if extra_items:
+            if not isinstance(extra_items, dict):
+                return Response(
+                    {'error': 'Extra items must be a dictionary'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            for xtra_item_id, data in extra_items.items():
+                extra_item = ExtraItem.objects.get(id=xtra_item_id)
+                qty = int(data.get('quantity', 1))
+                
+                CartItemExtra.objects.update_or_create(
+                    cart_item=cart_item,
+                    extra=extra_item,
+                    defaults={'quantity': qty}
+                )
+        
+        serializers = CartItemSerializer(cart_item)
+        return Response({
+            "message": "Dish added to cart successfully",
+            'data': serializers.data,
+        }, status=status.HTTP_201_CREATED)
     except Dish.DoesNotExist:
         return Response(
             {'error': 'Dish not found'},
