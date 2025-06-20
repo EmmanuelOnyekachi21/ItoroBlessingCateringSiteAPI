@@ -20,6 +20,7 @@ from .serializers import *
 from rest_framework.response import Response
 from rest_framework import status
 from django.db import transaction
+from django.shortcuts import get_object_or_404
 
 
 @api_view(['POST'])
@@ -50,13 +51,16 @@ def add_dish(request):
         extra_items = request.data.get('extra_items')
         note = request.data.get('note')
         quantity = int(request.data.get('quantity', 1))
-        orderoption = request.data.get('order_option')
+        orderoption = request.data.get('orderoption').lower()
         get_cart, created = Cart.objects.get_or_create(
             cart_code=cart_code
         )
-            
-        if orderoption:
+        
+        valueType = [ch[0] for ch in Cart.ORDER_TYPES]
+        if orderoption in valueType:
             get_cart.order_type = orderoption
+            get_cart.save()        
+            
 
         get_dish = Dish.objects.get(id=dish_id)
 
@@ -184,3 +188,90 @@ def get_cart_stat(request):
         return Response({
             'message': str(e)
         }, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['GET'])
+def get_cart_item(request):
+    """
+    Retrieve a specific cart item for a given cart and dish.
+
+    This view expects 'cart_code' and 'dish_id' as query parameters in
+    the request. It fetches the cart using the provided cart code
+    (ensuring the cart is not paid), and retrieves the dish using the
+    provided dish ID. If both exist, it attempts to find the
+    corresponding CartItem linking the cart and dish. If found, it
+    returns the serialized CartItem data with a 200 OK status. If the
+    CartItem does not exist, it returns a 404 Not Found with an
+    appropriate message. If either parameter is missing, it returns a
+    400 Bad Request.
+
+    Args:
+        request (Request): The HTTP request object containing
+            'cart_code' and 'dish_id' as query parameters.
+
+    Returns:
+        Response: A DRF Response object with the serialized CartItem
+            data if found, or an error message if not found or if
+            parameters are missing.
+    """
+    try:
+        cart_code = request.query_params.get('cart_code')
+        dish_id = request.query_params.get('dish_id')
+        
+        if not cart_code or not dish_id:
+            return Response(
+                {'error': 'cart code and dish id are required'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        cart = get_object_or_404(Cart, cart_code=cart_code, paid=False)
+        dish = get_object_or_404(Dish, id=dish_id)
+        
+        cart_item = CartItem.objects.get(cart=cart, dish=dish)
+        serializer = CartItemSerializer(cart_item)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    except CartItem.DoesNotExist:
+        return Response(
+            {'message': 'Item not in cart'},status=status.HTTP_404_NOT_FOUND
+        )
+
+@api_view(['GET'])
+def get_cart_item(request):
+    """
+    Retrieve a specific cart item based on cart code and dish ID.
+    This view extracts 'cart_code' and 'dish_id' from the request query
+    parameters, fetches the corresponding Cart and Dish objects, and then
+    retrieves the CartItem instance that matches both. If found, it returns
+    the serialized cart item data with a 200 OK status.
+    Returns:
+        Response: Serialized CartItem data with HTTP 200 OK if found.
+        Response: Error message with HTTP 400 BAD REQUEST if the CartItem
+        does not exist.
+        Response: Error message with HTTP 404 NOT FOUND for other exceptions.
+    Raises:
+        CartItem.DoesNotExist: If the cart item is not found.
+        Exception: For any other unexpected errors.
+    """
+    try:
+        cart_code = request.query_params.get('cart_code')
+        dish_id = request.query_params.get('dish_id')
+        
+        cart = get_object_or_404(Cart, cart_code=cart_code)
+        dish = get_object_or_404(Dish, id=dish_id)
+        
+        cart_item = CartItem.objects.get(cart=cart, dish=dish)
+        
+        serilializer = CartItemSerializer(cart_item)
+        
+        return Response(
+            serilializer.data, status=status.HTTP_200_OK
+        )
+    except CartItem.DoesNotExist:
+        return Response({
+            'error', 'Cart Item doesn\'t exist'
+        }, status=status.HTTP_400_BAD_REQUEST)
+    except Exception as e:
+        return Response({
+            'error': str(e)
+        }, status=status.HTTP_404_NOT_FOUND)
+    

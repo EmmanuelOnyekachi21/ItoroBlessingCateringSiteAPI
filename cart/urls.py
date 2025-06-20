@@ -15,4 +15,5 @@ urlpatterns = [
     # Check if a product is in the cart
     # path('product_in_cart/', views.product_in_cart, name='product-in-cart'),
     path('get_cart_stat/', views.get_cart_stat, name='get-cart-stat'),
+    path('get_cart_item/', views.get_cart_item, name='get-cart-item'),
 ]

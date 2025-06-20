@@ -56,6 +56,7 @@ class CartItemSerializer(serializers.ModelSerializer):
     # cart_id = serializers.IntegerField(source='cart.id', read_only=True)
     cart_code = serializers.SerializerMethodField()
     extra_items = CartItemExtraSerializer(many=True, read_only=True)
+    delivery_option = serializers.SerializerMethodField()
 
     class Meta:
         model = CartItem
@@ -67,7 +68,9 @@ class CartItemSerializer(serializers.ModelSerializer):
             'dish_id',
             'dish_name',
             'quantity',
-            'extra_items'
+            'extra_items',
+            'delivery_option',
+            # 'note'
         )
     
     def get_dish_name(self, obj):
@@ -85,6 +88,9 @@ class CartItemSerializer(serializers.ModelSerializer):
         of the cart code in the serialized output.
         """
         return obj.cart.cart_code if obj.cart else None
+    
+    def get_delivery_option(self, obj):
+        return obj.cart.order_type if obj.cart else None
 
 class CartSerializer(serializers.ModelSerializer):
     """
@@ -107,7 +113,7 @@ class CartSerializer(serializers.ModelSerializer):
             'created_at',
             'paid',
             'order_type',
-            'special_instruction',
+            # 'special_instruction',
             'items'
         )
         read_only_fields = ('created_at', 'paid', 'user')
@@ -132,3 +138,4 @@ class SimpleCartSerializer(serializers.ModelSerializer):
     
     def get_number_of_items(self, obj):
         return sum([item.quantity for item in obj.items.all()])
+
