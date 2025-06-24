@@ -56,6 +56,17 @@ class CartItem(models.Model):
         through_fields=('cart_item', 'extra'),
         blank=True
     )
+    
+    unit_price = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=0
+    )
+    total_price = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=0
+    )
 
     
     def __str__(self):

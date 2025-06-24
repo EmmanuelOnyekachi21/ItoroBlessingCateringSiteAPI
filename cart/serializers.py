@@ -15,6 +15,7 @@ from rest_framework import serializers
 from rest_framework.response import Response
 from .models import Cart, CartItem, CartItemExtra
 from dish.serializer import DishSerializer, ExtraItemsSerializer
+from dish.models import ExtraItem
 
 
 class CartItemExtraSerializer(serializers.ModelSerializer):
@@ -57,12 +58,14 @@ class CartItemSerializer(serializers.ModelSerializer):
     cart_code = serializers.SerializerMethodField()
     extra_items = CartItemExtraSerializer(many=True, read_only=True)
     delivery_option = serializers.SerializerMethodField()
+    extras = serializers.DictField(write_only=True, required=False)
 
     class Meta:
         model = CartItem
         fields = (
             'id',
             # 'cart',
+            'dish',
             'cart_code',
             'special_instruction',
             'dish_id',
@@ -70,8 +73,12 @@ class CartItemSerializer(serializers.ModelSerializer):
             'quantity',
             'extra_items',
             'delivery_option',
+            'unit_price',
+            'total_price',
+            'extras',
             # 'note'
         )
+        read_only_fields = ['unit_price', 'total_price']
     
     def get_dish_name(self, obj):
         """
@@ -91,6 +98,40 @@ class CartItemSerializer(serializers.ModelSerializer):
     
     def get_delivery_option(self, obj):
         return obj.cart.order_type if obj.cart else None
+    
+    def validate(self, attrs):
+        # Calculate price
+        """
+        Payload could come as:
+            {
+                "dish": 2,
+                "quantity": 3,
+                "extras": {
+                    "5": { "quantity": 2 },
+                    "9": { "quantity": 1 }
+                }
+            }
+        """
+        dish = attrs['dish']
+        quantity = attrs['quantity']
+        extra_data = self.initial_data.get('extras', {})
+        
+        unit_price = dish.price
+        total = unit_price * quantity
+        
+        for extra_id, extra_info in extra_data.items():
+            try:
+                extra = ExtraItem.objects.get(id=extra_id)
+                extra_qty = int(extra_info.get('quantity', 1))
+                total += extra.price * extra_qty
+            except ExtraItem.DoesNotExist:
+                continue
+        
+        attrs['unit_price'] = unit_price
+        attrs['total_price'] = total
+        
+        return attrs
+
 
 class CartSerializer(serializers.ModelSerializer):
     """
