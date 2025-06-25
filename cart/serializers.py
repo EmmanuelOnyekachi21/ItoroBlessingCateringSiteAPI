@@ -98,7 +98,36 @@ class CartItemSerializer(serializers.ModelSerializer):
     
     def get_delivery_option(self, obj):
         return obj.cart.order_type if obj.cart else None
-    
+
+
+class CartItemWriteSerializer(serializers.ModelSerializer):
+    """
+    Serializer for CartItem model, providing nested representations 4 related
+    Dish, Cart, and ExtraItems models. Used to serialize and deserialize cart
+    item data, including associated dish, cart, quantity, and extra items.
+    All related fields are read-only and represented using their respective
+    serializers.
+    """
+    extra_items = serializers.DictField(required=False, write_only=True)
+    cart_code = serializers.CharField(write_only=True)
+    note = serializers.CharField(write_only=True)
+    orderoption = serializers.CharField(write_only=True, required=False)
+
+
+    class Meta:
+        model = CartItem
+        fields = (
+            'id',
+            # 'cart',
+            'dish',
+            'quantity',
+            'special_instruction',
+            'extra_items',
+            "cart_code",
+            'note',
+            'orderoption'
+        )
+
     def validate(self, attrs):
         # Calculate price
         """
@@ -106,19 +135,22 @@ class CartItemSerializer(serializers.ModelSerializer):
             {
                 "dish": 2,
                 "quantity": 3,
-                "extras": {
+                "extra_items": {
                     "5": { "quantity": 2 },
                     "9": { "quantity": 1 }
                 }
+                "cart_code": "AVSYGS!$%@$^%3645"
             }
         """
         dish = attrs['dish']
         quantity = attrs['quantity']
-        extra_data = self.initial_data.get('extras', {})
+        extra_data = self.initial_data.get('extra_items', {})
         
         unit_price = dish.price
         total = unit_price * quantity
         
+        if extra_data and not isinstance(extra_data, dict):
+            raise serializers.ValidationError({'extra_items': 'Must be a dictionary'})
         for extra_id, extra_info in extra_data.items():
             try:
                 extra = ExtraItem.objects.get(id=extra_id)
@@ -131,6 +163,51 @@ class CartItemSerializer(serializers.ModelSerializer):
         attrs['total_price'] = total
         
         return attrs
+    
+    def create(self, validated_data):
+        cart_code = self.initial_data.get('cart_code')
+        
+        # get_or_create() returns a tuple, object and time created
+        cart, _ = Cart.objects.get_or_create(
+            cart_code=cart_code
+        )
+        
+        orderoption = self.initial_data.get('orderoption')
+        valueTypes = [ch[0] for ch in Cart.ORDER_TYPES]
+        if orderoption in valueTypes:
+            cart.order_type = orderoption
+            cart.save()
+        
+        extra_items = self.initial_data.get(extra_items, {})
+        unit_price = validated_data.pop('unit_price')
+        total_price = validated_data.pop('total_price')
+        
+        # Create the cart item with resolved cart
+        cart_item = CartItem.objects.create(
+            cart=cart,
+            dish=validated_data['dish'],
+        )
+        cart_item_qty = validated_data.pop('quantity')
+        if cart_item_qty:
+            cart_item.quantity = cart_item_qty
+        cart_item_note = validated_data.pop('note')
+        if cart_item_note:
+            cart_item.special_instruction = cart_item_note
+        cart_item.unit_price = unit_price
+        cart_item.total_price = total_price
+        cart_item.save()
+        
+        extra_items = validated_data.pop('extra_items')
+        for xtra_item_id, data in extra_items.items():
+                extra_item = ExtraItem.objects.get(id=xtra_item_id)
+                qty = int(data.get('quantity', 1))
+                
+                CartItemExtra.objects.update_or_create(
+                    cart_item=cart_item,
+                    extra=extra_item,
+                    defaults={'quantity': qty}
+                )
+        return cart_item
 
 
 class CartSerializer(serializers.ModelSerializer):
