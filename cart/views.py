@@ -45,81 +45,17 @@ def add_dish(request):
             and CartItem data if successful, or an error message if
             an exception occurs.
     """
-    try:
-        cart_code = request.data.get('cart_code')
-        dish_id = request.data.get('dish_id')
-        extra_items = request.data.get('extra_items')
-        note = request.data.get('note')
-        quantity = int(request.data.get('quantity', 1))
-        orderoption = request.data.get('orderoption').lower()
-        get_cart, created = Cart.objects.get_or_create(
-            cart_code=cart_code
-        )
-        
-        valueType = [ch[0] for ch in Cart.ORDER_TYPES]
-        if orderoption in valueType:
-            get_cart.order_type = orderoption
-            get_cart.save()        
-            
-
-        get_dish = Dish.objects.get(id=dish_id)
-
-        # Create CartItem object
-        cart_item, _ = CartItem.objects.get_or_create(
-            cart=get_cart,
-            dish=get_dish
-        )
-        
-        # Update CartItem Quantity
-        if cart_item:
-            cart_item.quantity = quantity
-        if note:
-            cart_item.special_instruction = note
-        
-        cart_item.save()
-
-        # Add new Extras
-        if extra_items:
-            if not isinstance(extra_items, dict):
-                return Response(
-                    {'error': 'Extra items must be a dictionary'},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-            for xtra_item_id, data in extra_items.items():
-                extra_item = ExtraItem.objects.get(id=xtra_item_id)
-                qty = int(data.get('quantity', 1))
-                
-                CartItemExtra.objects.update_or_create(
-                    cart_item=cart_item,
-                    extra=extra_item,
-                    defaults={'quantity': qty}
-                )
-        
-        serializers = CartItemSerializer(cart_item)
+    write_serializer = CartItemWriteSerializer(data=request.data)
+    if write_serializer.is_valid():
+        cart_item = write_serializer.save()
+        read_serializer = CartItemSerializer(cart_item)
         return Response({
             "message": "Dish added to cart successfully",
-            'data': serializers.data,
+            'data': read_serializer.data,
         }, status=status.HTTP_201_CREATED)
-    except Dish.DoesNotExist:
-        return Response(
-            {'error': 'Dish not found'},
-            status=status.HTTP_404_NOT_FOUND
-        )
-    except ExtraItem.DoesNotExist:
-        return Response(
-            {'error': 'Extra item not found'},
-            status=status.HTTP_404_NOT_FOUND
-        )
-    except Cart.DoesNotExist:
-        return Response(
-            {'error': 'Cart not found'},
-            status=status.HTTP_404_NOT_FOUND
-        )
-    except Exception as e:
-        return Response(
-            {'error': f'An unexpected error occurred: {str(e)}'},
-            status=status.HTTP_400_BAD_REQUEST
-        )
+    return Response({
+        'error': write_serializer.errors
+    }, status=status.HTTP_400_BAD_REQUEST)
 
 
 # @api_view(['POST'])
@@ -234,44 +170,4 @@ def get_cart_item(request):
         return Response(
             {'message': 'Item not in cart'},status=status.HTTP_404_NOT_FOUND
         )
-
-@api_view(['GET'])
-def get_cart_item(request):
-    """
-    Retrieve a specific cart item based on cart code and dish ID.
-    This view extracts 'cart_code' and 'dish_id' from the request query
-    parameters, fetches the corresponding Cart and Dish objects, and then
-    retrieves the CartItem instance that matches both. If found, it returns
-    the serialized cart item data with a 200 OK status.
-    Returns:
-        Response: Serialized CartItem data with HTTP 200 OK if found.
-        Response: Error message with HTTP 400 BAD REQUEST if the CartItem
-        does not exist.
-        Response: Error message with HTTP 404 NOT FOUND for other exceptions.
-    Raises:
-        CartItem.DoesNotExist: If the cart item is not found.
-        Exception: For any other unexpected errors.
-    """
-    try:
-        cart_code = request.query_params.get('cart_code')
-        dish_id = request.query_params.get('dish_id')
-        
-        cart = get_object_or_404(Cart, cart_code=cart_code)
-        dish = get_object_or_404(Dish, id=dish_id)
-        
-        cart_item = CartItem.objects.get(cart=cart, dish=dish)
-        
-        serilializer = CartItemSerializer(cart_item)
-        
-        return Response(
-            serilializer.data, status=status.HTTP_200_OK
-        )
-    except CartItem.DoesNotExist:
-        return Response({
-            'error', 'Cart Item doesn\'t exist'
-        }, status=status.HTTP_400_BAD_REQUEST)
-    except Exception as e:
-        return Response({
-            'error': str(e)
-        }, status=status.HTTP_404_NOT_FOUND)
     
