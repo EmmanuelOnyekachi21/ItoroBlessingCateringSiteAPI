@@ -40,14 +40,15 @@ class ExtraItemAdmin(admin.ModelAdmin):
 
 @admin.register(CartItem)
 class CartItemAdmin(admin.ModelAdmin):
-    list_display = ('cart', 'dish', 'quantity')
+    list_display = ('cart', 'dish', 'quantity', 'unit_price', 'total_price')
     search_fields = ('cart__cart_code', 'dish__name')
     inlines = (CartItemExtraInline,)
 
     fieldsets = (
         ("CartItem Information", {
             "fields": (
-                'cart', 'dish', 'quantity', 'special_instruction'
+                'cart', 'dish', 'quantity', 'special_instruction',
+                'unit_price', 'total_price'
             )
         }),
     )
@@ -55,6 +56,6 @@ class CartItemAdmin(admin.ModelAdmin):
     add_fieldsets = (
         ("Add CartItem", {
             "classes": ("wide",),
-            'fields': ('cart', 'dish', 'quantity', 'extras', 'special_instruction'),
+            'fields': ('cart', 'dish', 'quantity', 'extras', 'special_instruction', 'unit_price', 'total_price'),
         }),
     )
