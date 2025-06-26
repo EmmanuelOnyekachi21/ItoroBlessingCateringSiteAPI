@@ -15,7 +15,7 @@ from rest_framework import serializers
 from rest_framework.response import Response
 from .models import Cart, CartItem, CartItemExtra
 from dish.serializer import DishSerializer, ExtraItemsSerializer
-from dish.models import ExtraItem
+from dish.models import Dish, ExtraItem
 
 
 class CartItemExtraSerializer(serializers.ModelSerializer):
@@ -58,24 +58,21 @@ class CartItemSerializer(serializers.ModelSerializer):
     cart_code = serializers.SerializerMethodField()
     extra_items = CartItemExtraSerializer(many=True, read_only=True)
     delivery_option = serializers.SerializerMethodField()
-    extras = serializers.DictField(write_only=True, required=False)
 
     class Meta:
         model = CartItem
         fields = (
             'id',
             # 'cart',
-            'dish',
-            'cart_code',
-            'special_instruction',
             'dish_id',
+            'cart_code',
             'dish_name',
             'quantity',
-            'extra_items',
-            'delivery_option',
             'unit_price',
             'total_price',
-            'extras',
+            'extra_items',
+            'special_instruction',
+            'delivery_option',
             # 'note'
         )
         read_only_fields = ['unit_price', 'total_price']
@@ -101,113 +98,101 @@ class CartItemSerializer(serializers.ModelSerializer):
 
 
 class CartItemWriteSerializer(serializers.ModelSerializer):
-    """
-    Serializer for CartItem model, providing nested representations 4 related
-    Dish, Cart, and ExtraItems models. Used to serialize and deserialize cart
-    item data, including associated dish, cart, quantity, and extra items.
-    All related fields are read-only and represented using their respective
-    serializers.
-    """
-    extra_items = serializers.DictField(required=False, write_only=True)
+    dish = serializers.PrimaryKeyRelatedField(queryset=Dish.objects.all(), write_only=True)
+    extra_items = serializers.DictField(write_only=True, required=False)
     cart_code = serializers.CharField(write_only=True)
-    note = serializers.CharField(write_only=True)
+    note = serializers.CharField(write_only=True, required=False, allow_blank=True)
     orderoption = serializers.CharField(write_only=True, required=False)
-
 
     class Meta:
         model = CartItem
         fields = (
-            'id',
-            # 'cart',
             'dish',
             'quantity',
-            'special_instruction',
-            'extra_items',
-            "cart_code",
+            'cart_code',
             'note',
-            'orderoption'
+            'orderoption',
+            'extra_items'
         )
 
     def validate(self, attrs):
-        # Calculate price
-        """
-        Payload could come as:
-            {
-                "dish": 2,
-                "quantity": 3,
-                "extra_items": {
-                    "5": { "quantity": 2 },
-                    "9": { "quantity": 1 }
-                }
-                "cart_code": "AVSYGS!$%@$^%3645"
-            }
-        """
         dish = attrs['dish']
-        quantity = attrs['quantity']
-        extra_data = self.initial_data.get('extra_items', {})
-        
+        quantity = attrs.get('quantity', 1)
+        extras = self.initial_data.get('extra_items', {})
+
+        if extras and not isinstance(extras, dict):
+            raise serializers.ValidationError({'extra_items': 'Must be a dictionary'})
+
         unit_price = dish.price
         total = unit_price * quantity
-        
-        if extra_data and not isinstance(extra_data, dict):
-            raise serializers.ValidationError({'extra_items': 'Must be a dictionary'})
-        for extra_id, extra_info in extra_data.items():
+
+        # Add extras to total price
+        for extra_id, data in extras.items():
             try:
                 extra = ExtraItem.objects.get(id=extra_id)
-                extra_qty = int(extra_info.get('quantity', 1))
-                total += extra.price * extra_qty
+                qty = int(data.get('quantity', 1))
+                total += extra.price * qty
             except ExtraItem.DoesNotExist:
                 continue
-        
+
         attrs['unit_price'] = unit_price
         attrs['total_price'] = total
-        
         return attrs
-    
+
     def create(self, validated_data):
+        """
+        Creates a CartItem instance and associates it with a Cart. If the cart with
+        the provided cart_code does not exist, it is created. Sets the order type
+        if provided and valid. Adds extra items to the CartItem if specified.
+        All operations are performed atomically to ensure data integrity.
+        Args:
+            validated_data (dict): Validated data containing dish, quantity,
+                unit_price, and total_price for the CartItem.
+        Returns:
+            CartItem: The created CartItem instance.
+        """
+        
+        from django.db import transaction
+
         cart_code = self.initial_data.get('cart_code')
-        
-        # get_or_create() returns a tuple, object and time created
-        cart, _ = Cart.objects.get_or_create(
-            cart_code=cart_code
-        )
-        
+        note = self.initial_data.get('note', '')
         orderoption = self.initial_data.get('orderoption')
-        valueTypes = [ch[0] for ch in Cart.ORDER_TYPES]
-        if orderoption in valueTypes:
-            cart.order_type = orderoption
-            cart.save()
-        
-        extra_items = self.initial_data.get(extra_items, {})
-        unit_price = validated_data.pop('unit_price')
-        total_price = validated_data.pop('total_price')
-        
-        # Create the cart item with resolved cart
-        cart_item = CartItem.objects.create(
-            cart=cart,
-            dish=validated_data['dish'],
-        )
-        cart_item_qty = validated_data.pop('quantity')
-        if cart_item_qty:
-            cart_item.quantity = cart_item_qty
-        cart_item_note = validated_data.pop('note')
-        if cart_item_note:
-            cart_item.special_instruction = cart_item_note
-        cart_item.unit_price = unit_price
-        cart_item.total_price = total_price
-        cart_item.save()
-        
-        extra_items = validated_data.pop('extra_items')
-        for xtra_item_id, data in extra_items.items():
-                extra_item = ExtraItem.objects.get(id=xtra_item_id)
-                qty = int(data.get('quantity', 1))
-                
-                CartItemExtra.objects.update_or_create(
-                    cart_item=cart_item,
-                    extra=extra_item,
-                    defaults={'quantity': qty}
-                )
-        return cart_item
+        extras = self.initial_data.get('extra_items', {})
+
+        with transaction.atomic():
+            # Get or create the cart
+            cart, _ = Cart.objects.get_or_create(cart_code=cart_code)
+
+            # Set order type if valid
+            if orderoption in dict(Cart.ORDER_TYPES):
+                cart.order_type = orderoption
+                cart.save()
+
+            # Create CartItem
+            cart_item = CartItem.objects.create(
+                cart=cart,
+                dish=validated_data['dish'],
+                quantity=validated_data.get('quantity', 1),
+                special_instruction=note,
+                unit_price=validated_data['unit_price'],
+                total_price=validated_data['total_price']
+            )
+
+            # Add extras
+            for extra_id, data in extras.items():
+                try:
+                    extra = ExtraItem.objects.get(id=extra_id)
+                    qty = int(data.get('quantity', 1))
+                    CartItemExtra.objects.update_or_create(
+                        cart_item=cart_item,
+                        extra=extra,
+                        defaults={'quantity': qty}
+                    )
+                except ExtraItem.DoesNotExist:
+                    continue
+
+            return cart_item
+
 
 
 class CartSerializer(serializers.ModelSerializer):
