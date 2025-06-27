@@ -164,6 +164,7 @@ def get_cart_item(request):
         dish = get_object_or_404(Dish, id=dish_id)
         
         cart_item = CartItem.objects.get(cart=cart, dish=dish)
+
         serializer = CartItemSerializer(cart_item)
         return Response(serializer.data, status=status.HTTP_200_OK)
     except CartItem.DoesNotExist:
