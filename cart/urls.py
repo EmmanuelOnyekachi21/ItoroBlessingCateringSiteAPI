@@ -12,6 +12,9 @@ from . import views
 urlpatterns = [
     # Add a dish to the cart
     path('add_item/', views.add_dish, name='add-dish'),
+    path(
+        'update_item/<int:cartItemId>/', views.update_item, name='update-item'
+    ),
     # Check if a product is in the cart
     # path('product_in_cart/', views.product_in_cart, name='product-in-cart'),
     path('get_cart_stat/', views.get_cart_stat, name='get-cart-stat'),

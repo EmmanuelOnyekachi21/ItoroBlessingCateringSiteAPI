@@ -24,8 +24,6 @@ from django.shortcuts import get_object_or_404
 
 
 @api_view(['POST'])
-# Prevents partial saves (e.g. CartItem saved but an ExtraItem fails)
-@transaction.atomic
 def add_dish(request):
     """
     Adds a dish (and optionally an extra item) to a user's cart.
@@ -58,32 +56,32 @@ def add_dish(request):
     }, status=status.HTTP_400_BAD_REQUEST)
 
 
-# @api_view(['POST'])
-# def product_in_cart(request):
-#     """
-#     Checks if a specific dish is present in the user's cart.
-#     Args:
-#         request (Request): The HTTP request object containing\
-#             'cart_code' and 'dish_id' in its data.
-#     Returns:
-#         Response: A JSON response with a boolean value under\
-#             the key 'dish_in_cart' indicating whether the\
-#                 specified dish exists in the cart. Returns 200 OK status
+@api_view(['POST'])
+def product_in_cart(request):
+    """
+    Checks if a specific dish is present in the user's cart.
+    Args:
+        request (Request): The HTTP request object containing\
+            'cart_code' and 'dish_id' in its data.
+    Returns:
+        Response: A JSON response with a boolean value under\
+            the key 'dish_in_cart' indicating whether the\
+                specified dish exists in the cart. Returns 200 OK status
 
-#     """
-#     cart_code = request.data.get('cart_code')
-#     dish_id = request.data.get('dish_id')
+    """
+    cart_code = request.data.get('cart_code')
+    dish_id = request.data.get('dish_id')
 
-#     # Get cart
-#     cart = Cart.objects.get(cart_code=cart_code)
+    # Get cart
+    cart = Cart.objects.get(cart_code=cart_code)
 
-#     # Get DIsh
-#     dish = Dish.objects.get(id=dish_id)
+    # Get DIsh
+    dish = Dish.objects.get(id=dish_id)
 
-#     is_exists = CartItem.objects.filter(cart=cart, dish=dish).exists()
-#     return Response(
-#         {'dish_in_cart': is_exists}, status=status.HTTP_200_OK
-#     )
+    is_exists = CartItem.objects.filter(cart=cart, dish=dish).exists()
+    return Response(
+        {'dish_in_cart': is_exists}, status=status.HTTP_200_OK
+    )
 
 
 @api_view(['GET'])
@@ -153,7 +151,7 @@ def get_cart_item(request):
     try:
         cart_code = request.query_params.get('cart_code')
         dish_id = request.query_params.get('dish_id')
-        
+
         if not cart_code or not dish_id:
             return Response(
                 {'error': 'cart code and dish id are required'},
@@ -162,13 +160,34 @@ def get_cart_item(request):
 
         cart = get_object_or_404(Cart, cart_code=cart_code, paid=False)
         dish = get_object_or_404(Dish, id=dish_id)
-        
+
         cart_item = CartItem.objects.get(cart=cart, dish=dish)
 
         serializer = CartItemSerializer(cart_item)
         return Response(serializer.data, status=status.HTTP_200_OK)
     except CartItem.DoesNotExist:
         return Response(
-            {'message': 'Item not in cart'},status=status.HTTP_404_NOT_FOUND
+            {'message': 'Item not in cart'},
+            status=status.HTTP_404_NOT_FOUND
         )
-    
+
+
+@api_view(['PATCH', 'PUT'])
+def update_item(request, cartItemId):
+    cart_item = get_object_or_404(CartItem, id=cartItemId)
+    update_serializer = CartItemWriteSerializer(
+        cart_item,
+        data=request.data,
+        partial=True
+    )
+
+    if update_serializer.is_valid():
+        updated_item = update_serializer.save()
+        read_serializer = CartItemSerializer(updated_item)
+        return Response({
+            'message': 'Cart Item Updated Successfully',
+            'data': read_serializer.data
+        }, status=status.HTTP_200_OK)
+    return Response({
+        'error': update_serializer.errors
+    }, status=status.HTTP_400_BAD_REQUEST)
