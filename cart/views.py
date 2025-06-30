@@ -175,7 +175,7 @@ def get_cart_item(request):
 @api_view(['PATCH', 'PUT'])
 def update_item(request, cartItemId):
     cart_item = get_object_or_404(CartItem, id=cartItemId)
-    update_serializer = CartItemWriteSerializer(
+    update_serializer = CartItemUpdateWriteSerializer(
         cart_item,
         data=request.data,
         partial=True
