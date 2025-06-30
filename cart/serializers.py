@@ -11,6 +11,7 @@ Classes:
     CartItemSerializer: Serializes CartItem model instances, including
         related dish, cart, quantity, and extras.
 """
+from django.shortcuts import get_object_or_404
 from rest_framework import serializers
 from rest_framework.response import Response
 from .models import Cart, CartItem, CartItemExtra
@@ -206,6 +207,43 @@ class CartItemWriteSerializer(serializers.ModelSerializer):
 
             return cart_item
 
+
+class CartItemUpdateWriteSerializer(serializers.ModelSerializer):
+    note = serializers.CharField(
+        write_only=True,
+        required=False,
+        allow_blank=True
+    )
+    extra_items = serializers.DictField(
+        write_only=True,
+        required=False,
+    )
+
+    class Meta:
+        model = CartItem
+        fields = [
+            'quantity',
+            'note',
+            'extra_items'
+        ]
+
+    def validate(self, attrs):
+        quantity = attrs.get('quantity', self.instance.quantity)
+        extras = self.initial_data.get('extra_items', {})
+
+        unit_price = self.instance.dish.price
+        total = unit_price * quantity
+
+        for extra_id, data in extras.items():
+            extra = get_object_or_404(ExtraItem, id=extra_id)
+            qty = data.get('quantity', 1)
+            total += qty * extra.price
+
+        attrs['unit_price'] = unit_price
+        attrs['total_price'] = total
+
+        return attrs
+
     def update(self, instance, validated_data):
         """
         Updates a CartItem instance with new quantity, special instructions,
@@ -229,8 +267,6 @@ class CartItemWriteSerializer(serializers.ModelSerializer):
         unit_price = instance.dish.price
         total = unit_price * quantity
 
-        # Clears any existing extras for this cart item
-        # (because user might have added, removed, or changed quantities).
         if instance.extra_items.all():
             instance.extra_items.all().delete()
 
