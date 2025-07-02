@@ -273,7 +273,7 @@ class CartItemUpdateWriteSerializer(serializers.ModelSerializer):
         for extra_id, data in extras.items():
             try:
                 extra = ExtraItem.objects.get(id=extra_id)
-                print(f'\n\n {extra}')
+                # print(f'\n\n {extra}')
                 qty = int(data.get('quantity', 1))
                 CartItemExtra.objects.create(
                     cart_item=instance,
